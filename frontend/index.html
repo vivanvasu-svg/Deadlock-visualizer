@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Analyzer & Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-area">
+                <span class="logo-icon">&#9784;</span>
+                <h2>Deadlock Visualizer</h2>
+            </div>
+
+            <div class="control-section">
+                <h3>Select Scenario</h3>
+                <div class="scenario-buttons">
+                    <button class="btn btn-scenario active" data-scenario="rag_cycle">
+                        <span class="btn-icon">&#128376;</span> RAG Cycle
+                    </button>
+                    <button class="btn btn-scenario" data-scenario="dining_philosophers">
+                        <span class="btn-icon">&#127836;</span> Dining Phil
+                    </button>
+                    <button class="btn btn-scenario" data-scenario="bankers_safe">
+                        <span class="btn-icon">&#128181;</span> Banker's (Safe)
+                    </button>
+                    <button class="btn btn-scenario" data-scenario="bankers_unsafe">
+                        <span class="btn-icon">&#9888;</span> Banker's (Unsafe)
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Simulation Speed</h3>
+                <div class="speed-control">
+                    <input type="range" id="speedSlider" min="500" max="3000" val="1000" step="250">
+                    <span id="speedVal">1.0s / step</span>
+                </div>
+            </div>
+
+            <div class="control-section scenario-info">
+                <h3>About Scenario</h3>
+                <p id="scenarioDesc">Loading...</p>
+                <div class="info-tag" id="scenarioAlgo">WFG</div>
+            </div>
+
+            <div class="footer-credit">
+                <p>C Backend</p>
+                <p class="git-status">Live</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="dashboard-header">
+                <div class="scenario-title-area">
+                    <span class="subtext">SIMULATION ENGINE STATE</span>
+                    <h1 id="currentScenarioName">Resource Allocation Graph</h1>
+                </div>
+
+                <div class="timeline-stepper">
+                    <button class="ctrl-btn" id="btnRestart">&#8635;</button>
+                    <button class="ctrl-btn" id="btnPrev">&#9664;</button>
+                    <button class="ctrl-btn play-btn" id="btnPlay">&#9658;</button>
+                    <button class="ctrl-btn" id="btnNext">&#9654;</button>
+                    <div class="step-counter">
+                        Step: <span id="currentStepText">0</span> / <span id="totalStepsText">0</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="workspace">
+                <div class="card visualizer-card" id="graphContainer">
+                    <div class="card-header">
+                        <h3>Resource Allocation Graph</h3>
+                        <div class="node-legend">
+                            <span class="legend-item"><span class="dot dot-process"></span> Process</span>
+                            <span class="legend-item"><span class="dot dot-resource"></span> Resource</span>
+                            <span class="legend-item"><span class="dot dot-cycle"></span> Cycle</span>
+                        </div>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="graphCanvas"></canvas>
+                        <div id="deadlockBanner" class="deadlock-alert hidden">
+                            <span class="alert-icon">&#9888;</span>
+                            <div class="alert-content">
+                                <h4>DEADLOCK TRIGGERED</h4>
+                                <p id="deadlockCyclePath">Cycle: P0 -> R0 -> P0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bankers-card hidden" id="matrixContainer">
+                    <div class="card-header">
+                        <h3>Banker's Algorithm State</h3>
+                        <div class="bankers-legend">
+                            <span class="legend-item"><span class="badge badge-need">Need</span> Vector</span>
+                            <span class="legend-item"><span class="badge badge-avail">Work</span> Vector</span>
+                        </div>
+                    </div>
+                    <div class="matrix-tables-wrapper">
+                        <div class="avail-vector-section">
+                            <h4>Available Resources (Work)</h4>
+                            <div class="avail-container" id="availVectorContainer"></div>
+                        </div>
+
+                        <div class="matrix-grid">
+                            <table class="classic-table" id="bankersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Process</th>
+                                        <th colspan="3">Allocation</th>
+                                        <th colspan="3">Max</th>
+                                        <th colspan="3">Need</th>
+                                        <th class="col-status">Status</th>
+                                    </tr>
+                                    <tr class="subheaders">
+                                        <th></th>
+                                        <th>A</th>
+                                        <th>B</th>
+                                        <th>C</th>
+                                        <th>A</th>
+                                        <th>B</th>
+                                        <th>C</th>
+                                        <th>A</th>
+                                        <th>B</th>
+                                        <th>C</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bankersTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="safetySequenceBanner" class="safety-banner state-safe">
+                            <span class="status-indicator"></span>
+                            <span id="safetySequenceText">Safe Sequence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card console-card">
+                    <div class="card-header">
+                        <h3>Execution Log</h3>
+                        <button class="clear-btn" id="btnClearLog">Clear</button>
+                    </div>
+                    <div class="console-body" id="consoleLogArea">
+                        <div class="console-line system-line">[Click Play to start]</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
